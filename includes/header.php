@@ -55,7 +55,7 @@ $flashMessages = consume_flash_messages();
                             <a class="btn btn-outline-dark btn-sm" href="<?php echo e(site_url('admin/dashboard.php')); ?>">Admin</a>
                         <?php endif; ?>
                         <?php if ($currentUser): ?>
-                            <a class="btn btn-outline-dark btn-sm" href="<?php echo e(site_url('user/account.php')); ?>"><?php echo e($currentUser['username']); ?></a>
+                            <a class="btn btn-outline-dark btn-sm" href="<?php echo e(site_url('user/dashboard.php')); ?>"><?php echo e($currentUser['username']); ?></a>
                             <a class="btn btn-dark btn-sm" href="<?php echo e(site_url('user/logout.php')); ?>">Logout</a>
                         <?php else: ?>
                             <a class="btn btn-outline-dark btn-sm" href="<?php echo e(site_url('user/login.php')); ?>">Login</a>

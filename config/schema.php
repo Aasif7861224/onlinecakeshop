@@ -115,7 +115,7 @@ if (!function_exists('ensure_database_schema')) {
                 id INT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
                 user_id INT UNSIGNED NOT NULL,
                 total_price DECIMAL(10,2) NOT NULL DEFAULT 0.00,
-                status ENUM('Pending', 'Packed', 'Shipped', 'Delivered') NOT NULL DEFAULT 'Pending',
+                status ENUM('Pending', 'Packed', 'Shipped', 'Delivered', 'Cancelled') NOT NULL DEFAULT 'Pending',
                 payment_method VARCHAR(50) NOT NULL DEFAULT 'COD',
                 payment_status VARCHAR(50) NOT NULL DEFAULT 'Pending',
                 razorpay_order_id VARCHAR(120) NULL,
@@ -177,6 +177,8 @@ if (!function_exists('ensure_database_schema')) {
         foreach ($queries as $query) {
             schema_execute($connection, $query);
         }
+
+        schema_execute($connection, "ALTER TABLE orders MODIFY status ENUM('Pending', 'Packed', 'Shipped', 'Delivered', 'Cancelled') NOT NULL DEFAULT 'Pending'");
 
         $missingLogs = $connection->query('SELECT id, status FROM orders WHERE id NOT IN (SELECT order_id FROM order_status_logs)');
         if ($missingLogs instanceof mysqli_result) {

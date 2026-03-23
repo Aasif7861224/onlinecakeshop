@@ -7,12 +7,12 @@ $order = db_fetch_one(db_statement('SELECT o.*, u.username, u.email, u.mobile FR
 
 if (!$order) {
     set_flash('danger', 'Invoice not found.');
-    redirect($user['role'] === 'admin' ? 'admin/orders.php' : 'user/account.php');
+    redirect($user['role'] === 'admin' ? 'admin/orders.php' : 'user/orders.php');
 }
 
 if ($user['role'] !== 'admin' && (int) $order['user_id'] !== (int) $user['id']) {
     set_flash('danger', 'You cannot access that invoice.');
-    redirect('user/account.php');
+    redirect('user/orders.php');
 }
 
 $items = db_fetch_all(db_statement('SELECT * FROM order_items WHERE order_id = ? ORDER BY id ASC', 'i', array($orderId)));
@@ -28,7 +28,7 @@ require_once __DIR__ . '/includes/header.php';
         </div>
         <div class="d-flex gap-2">
             <button class="btn btn-primary" type="button" onclick="window.print()">Print / Save PDF</button>
-            <a class="btn btn-outline-dark" href="<?php echo e(site_url($user['role'] === 'admin' ? 'admin/orders.php' : 'user/account.php')); ?>">Back</a>
+            <a class="btn btn-outline-dark" href="<?php echo e(site_url($user['role'] === 'admin' ? 'admin/orders.php' : 'user/orders.php')); ?>">Back</a>
         </div>
     </div>
 

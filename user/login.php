@@ -2,7 +2,7 @@
 require_once __DIR__ . '/../includes/bootstrap.php';
 
 if (is_logged_in()) {
-    redirect(is_admin() ? 'admin/dashboard.php' : 'user/account.php');
+    redirect(is_admin() ? 'admin/dashboard.php' : 'user/dashboard.php');
 }
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -19,7 +19,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if ($user && password_verify($password, $user['password_hash'])) {
         login_user($user, $remember);
         set_flash('success', 'Welcome back, ' . $user['username'] . '.');
-        redirect($user['role'] === 'admin' ? 'admin/dashboard.php' : 'user/account.php');
+        redirect($user['role'] === 'admin' ? 'admin/dashboard.php' : 'user/dashboard.php');
     }
 
     set_flash('danger', 'Invalid email/username or password.');

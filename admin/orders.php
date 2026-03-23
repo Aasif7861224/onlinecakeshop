@@ -63,6 +63,7 @@ require_once __DIR__ . '/../includes/header.php';
                                 <option value="Packed" <?php echo selected($order['status'], 'Packed'); ?>>Packed</option>
                                 <option value="Shipped" <?php echo selected($order['status'], 'Shipped'); ?>>Shipped</option>
                                 <option value="Delivered" <?php echo selected($order['status'], 'Delivered'); ?>>Delivered</option>
+                                <option value="Cancelled" <?php echo selected($order['status'], 'Cancelled'); ?>>Cancelled</option>
                             </select>
                             <button class="btn btn-primary w-100" type="submit">Update status</button>
                             <a class="btn btn-outline-dark w-100 mt-2" href="<?php echo e(site_url('invoice.php?order_id=' . (int) $order['id'])); ?>">Invoice</a>

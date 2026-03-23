@@ -61,7 +61,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $action !== '') {
         $result = placeCashOrder($user['id'], $deliveryDate, $address);
         if ($result['success']) {
             set_flash('success', 'Order ' . get_order_display_number($result['order_id']) . ' placed successfully.');
-            redirect('user/account.php');
+            redirect('user/orders.php');
         }
 
         set_flash('danger', $result['message']);

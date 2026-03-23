@@ -13,7 +13,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     if ($result['success']) {
         login_user($result['user'], false);
-        redirect('user/account.php');
+        redirect('user/dashboard.php');
     }
 }
 

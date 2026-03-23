@@ -9,15 +9,28 @@ if (!$product) {
     redirect('shop.php');
 }
 
+$currentUser = current_user();
+$canReviewProduct = $currentUser ? user_can_review_product($currentUser['id'], $productId) : false;
+$existingReview = null;
+if ($currentUser) {
+    $reviewMap = getUserProductReviewMap($currentUser['id']);
+    $existingReview = isset($reviewMap[$productId]) ? $reviewMap[$productId] : null;
+}
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'review') {
-    requireLogin();
+    $user = requireLogin();
 
     if (!verify_csrf_token()) {
         set_flash('danger', 'Invalid request token. Please try again.');
         redirect('product.php?id=' . $productId);
     }
 
-    $result = saveReview(current_user_id(), $productId, isset($_POST['rating']) ? $_POST['rating'] : 0, isset($_POST['comment']) ? $_POST['comment'] : '');
+    if (!user_can_review_product($user['id'], $productId)) {
+        set_flash('danger', 'You can rate this cake only after one of your orders has been delivered.');
+        redirect('product.php?id=' . $productId);
+    }
+
+    $result = saveReview($user['id'], $productId, isset($_POST['rating']) ? $_POST['rating'] : 0, isset($_POST['comment']) ? $_POST['comment'] : '');
     if ($result['success']) {
         set_flash('success', 'Thanks. Your review was submitted for approval.');
     } else {
@@ -103,6 +116,9 @@ require_once __DIR__ . '/includes/header.php';
                 <?php if (!is_logged_in()): ?>
                     <p class="subtle-text">Login to submit a review and help the next customer choose with confidence.</p>
                     <a class="btn btn-dark" href="<?php echo e(site_url('user/login.php')); ?>">Login to review</a>
+                <?php elseif (!$canReviewProduct): ?>
+                    <p class="subtle-text">Rating option tab unlock hoga jab yeh cake aapke delivered order ka part hoga.</p>
+                    <a class="btn btn-outline-dark" href="<?php echo e(site_url('user/orders.php')); ?>">View my orders</a>
                 <?php else: ?>
                     <form method="post">
                         <?php echo csrf_field(); ?>
@@ -110,18 +126,18 @@ require_once __DIR__ . '/includes/header.php';
                         <div class="mb-3">
                             <label class="form-label">Rating</label>
                             <select class="form-select" name="rating">
-                                <option value="5">5 - Loved it</option>
-                                <option value="4">4 - Really good</option>
-                                <option value="3">3 - Good</option>
-                                <option value="2">2 - Could be better</option>
-                                <option value="1">1 - Not for me</option>
+                                <option value="5" <?php echo selected($existingReview ? $existingReview['rating'] : 5, 5); ?>>5 - Loved it</option>
+                                <option value="4" <?php echo selected($existingReview ? $existingReview['rating'] : 5, 4); ?>>4 - Really good</option>
+                                <option value="3" <?php echo selected($existingReview ? $existingReview['rating'] : 5, 3); ?>>3 - Good</option>
+                                <option value="2" <?php echo selected($existingReview ? $existingReview['rating'] : 5, 2); ?>>2 - Could be better</option>
+                                <option value="1" <?php echo selected($existingReview ? $existingReview['rating'] : 5, 1); ?>>1 - Not for me</option>
                             </select>
                         </div>
                         <div class="mb-3">
                             <label class="form-label">Comment</label>
-                            <textarea class="form-control" rows="5" name="comment" placeholder="Tell us what stood out"></textarea>
+                            <textarea class="form-control" rows="5" name="comment" placeholder="Tell us what stood out"><?php echo e($existingReview ? $existingReview['comment'] : ''); ?></textarea>
                         </div>
-                        <button class="btn btn-primary" type="submit">Submit review</button>
+                        <button class="btn btn-primary" type="submit"><?php echo $existingReview ? 'Update review' : 'Submit review'; ?></button>
                     </form>
                 <?php endif; ?>
             </div>

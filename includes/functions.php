@@ -428,7 +428,7 @@ if (!function_exists('requireLogin')) {
 
         if ($role !== null && $user['role'] !== $role) {
             set_flash('danger', 'You are not allowed to access that page.');
-            redirect($user['role'] === 'admin' ? 'admin/dashboard.php' : 'user/account.php');
+            redirect($user['role'] === 'admin' ? 'admin/dashboard.php' : 'user/dashboard.php');
         }
 
         return $user;
@@ -1022,17 +1022,141 @@ if (!function_exists('markRazorpayOrderPaid')) {
     }
 }
 
+if (!function_exists('getUserProductReviewMap')) {
+    function getUserProductReviewMap($userId)
+    {
+        $reviews = db_fetch_all(db_statement('SELECT * FROM reviews WHERE user_id = ?', 'i', array((int) $userId)));
+        $reviewMap = array();
+
+        foreach ($reviews as $review) {
+            $reviewMap[(int) $review['product_id']] = $review;
+        }
+
+        return $reviewMap;
+    }
+}
+
+if (!function_exists('can_cancel_order')) {
+    function can_cancel_order(array $order)
+    {
+        return in_array($order['status'], array('Pending', 'Packed', 'Shipped'), true);
+    }
+}
+
+if (!function_exists('can_review_order')) {
+    function can_review_order(array $order)
+    {
+        return $order['status'] === 'Delivered';
+    }
+}
+
+if (!function_exists('user_can_review_product')) {
+    function user_can_review_product($userId, $productId)
+    {
+        $sql = "SELECT o.id
+                FROM orders o
+                INNER JOIN order_items oi ON oi.order_id = o.id
+                WHERE o.user_id = ? AND o.status = 'Delivered' AND oi.product_id = ?
+                LIMIT 1";
+
+        return db_fetch_one(db_statement($sql, 'ii', array((int) $userId, (int) $productId))) !== null;
+    }
+}
+
+if (!function_exists('getReviewAccessForOrderItem')) {
+    function getReviewAccessForOrderItem($userId, $orderId, $productId)
+    {
+        $sql = "SELECT o.id
+                FROM orders o
+                INNER JOIN order_items oi ON oi.order_id = o.id
+                WHERE o.id = ? AND o.user_id = ? AND o.status = 'Delivered' AND oi.product_id = ?
+                LIMIT 1";
+
+        return db_fetch_one(db_statement($sql, 'iii', array((int) $orderId, (int) $userId, (int) $productId))) !== null;
+    }
+}
+
 if (!function_exists('getUserOrders')) {
     function getUserOrders($userId)
     {
         $orders = db_fetch_all(db_statement('SELECT * FROM orders WHERE user_id = ? ORDER BY created_at DESC', 'i', array((int) $userId)));
+        $reviewMap = getUserProductReviewMap($userId);
 
         foreach ($orders as &$order) {
             $order['items'] = db_fetch_all(db_statement('SELECT * FROM order_items WHERE order_id = ? ORDER BY id ASC', 'i', array((int) $order['id'])));
             $order['status_logs'] = db_fetch_all(db_statement('SELECT * FROM order_status_logs WHERE order_id = ? ORDER BY changed_at DESC', 'i', array((int) $order['id'])));
+            $order['can_cancel'] = can_cancel_order($order);
+            $order['can_review'] = can_review_order($order);
+
+            foreach ($order['items'] as &$item) {
+                $productId = isset($item['product_id']) ? (int) $item['product_id'] : 0;
+                $item['review'] = $productId > 0 && isset($reviewMap[$productId]) ? $reviewMap[$productId] : null;
+            }
+            unset($item);
         }
+        unset($order);
 
         return $orders;
+    }
+}
+
+if (!function_exists('split_orders_by_period')) {
+    function split_orders_by_period(array $orders)
+    {
+        $recent = array();
+        $old = array();
+        $cutoff = strtotime('-30 days');
+
+        foreach ($orders as $order) {
+            $createdAt = strtotime($order['created_at']);
+            $isRecent = $createdAt >= $cutoff || !in_array($order['status'], array('Delivered', 'Cancelled'), true);
+
+            if ($isRecent) {
+                $recent[] = $order;
+            } else {
+                $old[] = $order;
+            }
+        }
+
+        return array(
+            'recent' => $recent,
+            'old' => $old,
+        );
+    }
+}
+
+if (!function_exists('getUserDashboardStats')) {
+    function getUserDashboardStats($userId)
+    {
+        $activeOrders = db_fetch_one(db_statement("SELECT COUNT(*) AS total FROM orders WHERE user_id = ? AND status IN ('Pending', 'Packed', 'Shipped')", 'i', array((int) $userId)));
+        $deliveredOrders = db_fetch_one(db_statement("SELECT COUNT(*) AS total FROM orders WHERE user_id = ? AND status = 'Delivered'", 'i', array((int) $userId)));
+        $pendingFeedback = db_fetch_one(db_statement("SELECT COUNT(*) AS total
+            FROM order_items oi
+            INNER JOIN orders o ON o.id = oi.order_id
+            LEFT JOIN reviews r ON r.user_id = o.user_id AND r.product_id = oi.product_id
+            WHERE o.user_id = ? AND o.status = 'Delivered' AND oi.product_id IS NOT NULL AND r.id IS NULL", 'i', array((int) $userId)));
+
+        return array(
+            'active_orders' => $activeOrders ? (int) $activeOrders['total'] : 0,
+            'delivered_orders' => $deliveredOrders ? (int) $deliveredOrders['total'] : 0,
+            'pending_feedback' => $pendingFeedback ? (int) $pendingFeedback['total'] : 0,
+        );
+    }
+}
+
+if (!function_exists('getPendingFeedbackItems')) {
+    function getPendingFeedbackItems($userId, $limit = 4)
+    {
+        $sql = "SELECT o.id AS order_id, o.created_at, oi.product_id, oi.quantity, p.name AS product_name, p.image_path
+                FROM order_items oi
+                INNER JOIN orders o ON o.id = oi.order_id
+                INNER JOIN products p ON p.id = oi.product_id
+                LEFT JOIN reviews r ON r.user_id = o.user_id AND r.product_id = oi.product_id
+                WHERE o.user_id = ? AND o.status = 'Delivered' AND oi.product_id IS NOT NULL AND r.id IS NULL
+                ORDER BY o.created_at DESC, oi.id DESC
+                LIMIT ?";
+
+        return db_fetch_all(db_statement($sql, 'ii', array((int) $userId, max(1, (int) $limit))));
     }
 }
 
@@ -1129,7 +1253,7 @@ if (!function_exists('getAllUsers')) {
 if (!function_exists('updateOrderStatus')) {
     function updateOrderStatus($orderId, $status)
     {
-        $allowed = array('Pending', 'Packed', 'Shipped', 'Delivered');
+        $allowed = array('Pending', 'Packed', 'Shipped', 'Delivered', 'Cancelled');
         if (!in_array($status, $allowed, true)) {
             return false;
         }
@@ -1138,6 +1262,29 @@ if (!function_exists('updateOrderStatus')) {
         log_order_status($orderId, $status);
 
         return true;
+    }
+}
+
+if (!function_exists('cancelUserOrder')) {
+    function cancelUserOrder($userId, $orderId)
+    {
+        $order = db_fetch_one(db_statement('SELECT * FROM orders WHERE id = ? AND user_id = ? LIMIT 1', 'ii', array((int) $orderId, (int) $userId)));
+        if (!$order) {
+            return array('success' => false, 'message' => 'Order not found.');
+        }
+
+        if (!can_cancel_order($order)) {
+            return array('success' => false, 'message' => 'This order can no longer be cancelled.');
+        }
+
+        $paymentStatus = $order['payment_method'] === 'Razorpay' && $order['payment_status'] === 'Paid'
+            ? 'Refund Pending'
+            : 'Cancelled';
+
+        db_statement('UPDATE orders SET status = ?, payment_status = ?, updated_at = NOW() WHERE id = ?', 'ssi', array('Cancelled', $paymentStatus, (int) $orderId))->close();
+        log_order_status($orderId, 'Cancelled');
+
+        return array('success' => true, 'message' => 'Order cancelled successfully.');
     }
 }
 

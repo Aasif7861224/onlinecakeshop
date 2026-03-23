@@ -32,7 +32,7 @@ if ($result['success']) {
     set_flash('success', 'Payment verified successfully and your order has been placed.');
     echo json_encode(array(
         'success' => true,
-        'redirect' => site_url('user/account.php'),
+        'redirect' => site_url('user/orders.php'),
     ));
     exit;
 }

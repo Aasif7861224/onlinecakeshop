@@ -7,7 +7,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     if ($user && password_verify($password, $user['password_hash'])) {
         login_user($user, false);
-        redirect($user['role'] === 'admin' ? 'admin/dashboard.php' : 'user/account.php');
+        redirect($user['role'] === 'admin' ? 'admin/dashboard.php' : 'user/dashboard.php');
     }
 }
 
