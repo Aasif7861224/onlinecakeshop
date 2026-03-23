@@ -28,6 +28,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
 }
 
 $pageTitle = $product['name'];
+$metaDescription = $product['description'];
 $currentPage = 'shop';
 $reviews = getProductReviews($productId, true);
 
@@ -50,7 +51,7 @@ require_once __DIR__ . '/includes/header.php';
                 </div>
                 <p class="subtle-text mb-4"><?php echo nl2br(e($product['description'])); ?></p>
 
-                <form method="post" action="<?php echo e(site_url('cart.php?action=add')); ?>" class="row g-3">
+                <form method="post" action="<?php echo e(site_url('cart.php?action=add')); ?>" class="row g-3" data-ajax-cart-form="add">
                     <?php echo csrf_field(); ?>
                     <input type="hidden" name="product_id" value="<?php echo (int) $product['id']; ?>">
                     <input type="hidden" name="redirect_to" value="<?php echo e(site_url('product.php?id=' . $product['id'])); ?>">

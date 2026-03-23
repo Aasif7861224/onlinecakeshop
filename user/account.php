@@ -148,9 +148,20 @@ require_once __DIR__ . '/../includes/header.php';
                                     <p class="mb-1"><strong>Total:</strong> <?php echo e(format_currency($order['total_price'])); ?></p>
                                     <p class="mb-1"><strong>Delivery:</strong> <?php echo e($order['delivery_date'] ?: 'Not set'); ?></p>
                                     <p class="mb-0"><strong>Address:</strong> <?php echo e($order['address_snapshot']); ?></p>
+                                    <a class="btn btn-outline-dark btn-sm mt-3" href="<?php echo e(site_url('invoice.php?order_id=' . (int) $order['id'])); ?>">Invoice</a>
                                 </div>
                             </div>
                         </div>
+                        <?php if (!empty($order['status_logs'])): ?>
+                            <div class="mt-3">
+                                <strong class="d-block mb-2">Status history</strong>
+                                <div class="d-flex flex-wrap gap-2">
+                                    <?php foreach ($order['status_logs'] as $statusLog): ?>
+                                        <span class="rating-chip"><?php echo e($statusLog['status']); ?> · <?php echo e(date('d M, h:i A', strtotime($statusLog['changed_at']))); ?></span>
+                                    <?php endforeach; ?>
+                                </div>
+                            </div>
+                        <?php endif; ?>
                     </div>
                 <?php endforeach; ?>
             </div>

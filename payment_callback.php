@@ -11,7 +11,15 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST' || !verify_csrf_token()) {
     exit;
 }
 
-$user = requireLogin();
+$user = current_user();
+if (!$user) {
+    echo json_encode(array(
+        'success' => false,
+        'message' => 'Login required to verify payment.',
+    ));
+    exit;
+}
+
 $result = markRazorpayOrderPaid(
     isset($_POST['order_id']) ? (int) $_POST['order_id'] : 0,
     isset($_POST['razorpay_order_id']) ? $_POST['razorpay_order_id'] : '',

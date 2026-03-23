@@ -4,7 +4,7 @@ if (!function_exists('schema_execute')) {
     function schema_execute(mysqli $connection, $sql)
     {
         if (!$connection->query($sql)) {
-            die('Database setup failed: ' . $connection->error);
+            throw new RuntimeException('Database setup failed.');
         }
     }
 }
@@ -126,6 +126,14 @@ if (!function_exists('ensure_database_schema')) {
                 updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
                 KEY idx_orders_user (user_id),
                 CONSTRAINT fk_orders_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci",
+            "CREATE TABLE IF NOT EXISTS order_status_logs (
+                id INT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
+                order_id INT UNSIGNED NOT NULL,
+                status VARCHAR(50) NOT NULL,
+                changed_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                KEY idx_order_status_logs_order (order_id),
+                CONSTRAINT fk_order_status_logs_order FOREIGN KEY (order_id) REFERENCES orders(id) ON DELETE CASCADE
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci",
             "CREATE TABLE IF NOT EXISTS order_items (
                 id INT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
@@ -299,6 +307,10 @@ if (!function_exists('migrate_legacy_data_if_needed')) {
                         $insertOrder->execute();
                         $newOrderId = $insertOrder->insert_id;
                         $insertOrder->close();
+                        $logStatus = $connection->prepare('INSERT INTO order_status_logs (order_id, status, changed_at) VALUES (?, ?, NOW())');
+                        $logStatus->bind_param('is', $newOrderId, $status);
+                        $logStatus->execute();
+                        $logStatus->close();
 
                         $legacyItems = isset($detailsByOrder[(int) $order['orders_id']]) ? $detailsByOrder[(int) $order['orders_id']] : array();
                         foreach ($legacyItems as $legacyItem) {

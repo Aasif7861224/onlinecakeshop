@@ -3,6 +3,7 @@ require_once __DIR__ . '/includes/bootstrap.php';
 
 $action = isset($_GET['action']) ? $_GET['action'] : '';
 $pageTitle = 'Cart';
+$metaDescription = 'Update your cart, review totals, and complete checkout with COD or Razorpay.';
 $currentPage = 'cart';
 $razorpayCheckout = null;
 
@@ -174,7 +175,7 @@ require_once __DIR__ . '/includes/header.php';
         <div class="row g-4">
             <div class="col-lg-8">
                 <div class="table-card">
-                    <form method="post" action="<?php echo e(site_url('cart.php?action=update')); ?>">
+                    <form method="post" action="<?php echo e(site_url('cart.php?action=update')); ?>" id="cartUpdateForm">
                         <?php echo csrf_field(); ?>
                         <div class="table-responsive">
                             <table class="table align-middle">
@@ -189,7 +190,7 @@ require_once __DIR__ . '/includes/header.php';
                                 </thead>
                                 <tbody>
                                     <?php foreach ($items as $item): ?>
-                                        <tr>
+                                        <tr data-cart-row data-product-id="<?php echo (int) $item['product_id']; ?>">
                                             <td>
                                                 <div class="d-flex align-items-center gap-3">
                                                     <img src="<?php echo e(site_url($item['image_path'])); ?>" alt="<?php echo e($item['name']); ?>" style="width:72px;height:72px;object-fit:cover;border-radius:16px;">
@@ -199,10 +200,10 @@ require_once __DIR__ . '/includes/header.php';
                                                 </div>
                                             </td>
                                             <td><?php echo e(format_currency($item['price'])); ?></td>
-                                            <td><input class="form-control cart-qty" type="number" min="1" max="20" name="quantities[<?php echo (int) $item['product_id']; ?>]" value="<?php echo (int) $item['quantity']; ?>"></td>
-                                            <td><?php echo e(format_currency($item['price'] * $item['quantity'])); ?></td>
+                                            <td><input class="form-control cart-qty" type="number" min="1" max="20" name="quantities[<?php echo (int) $item['product_id']; ?>]" value="<?php echo (int) $item['quantity']; ?>" data-cart-quantity data-product-id="<?php echo (int) $item['product_id']; ?>"></td>
+                                            <td data-line-total><?php echo e(format_currency($item['price'] * $item['quantity'])); ?></td>
                                             <td>
-                                                <button class="btn btn-outline-danger btn-sm" type="submit" name="product_id" value="<?php echo (int) $item['product_id']; ?>" formaction="<?php echo e(site_url('cart.php?action=remove')); ?>" formmethod="post">Remove</button>
+                                                <button class="btn btn-outline-danger btn-sm" type="button" data-cart-remove data-product-id="<?php echo (int) $item['product_id']; ?>">Remove</button>
                                             </td>
                                         </tr>
                                     <?php endforeach; ?>
@@ -214,7 +215,7 @@ require_once __DIR__ . '/includes/header.php';
                             <a class="btn btn-outline-dark" href="<?php echo e(site_url('shop.php')); ?>">Continue shopping</a>
                         </div>
                     </form>
-                    <form class="mt-2" method="post" action="<?php echo e(site_url('cart.php?action=clear')); ?>">
+                    <form class="mt-2" method="post" action="<?php echo e(site_url('cart.php?action=clear')); ?>" data-ajax-cart-clear="1">
                         <?php echo csrf_field(); ?>
                         <button class="btn btn-outline-dark" type="submit" data-confirm="Clear the full cart?">Clear cart</button>
                     </form>
@@ -226,11 +227,11 @@ require_once __DIR__ . '/includes/header.php';
                     <h2 class="h3 mb-3">Order total</h2>
                     <div class="d-flex justify-content-between mb-2">
                         <span>Items</span>
-                        <strong><?php echo (int) $totals['count']; ?></strong>
+                        <strong data-cart-count-display><?php echo (int) $totals['count']; ?></strong>
                     </div>
                     <div class="d-flex justify-content-between">
                         <span>Subtotal</span>
-                        <strong><?php echo e(format_currency($totals['subtotal'])); ?></strong>
+                        <strong data-cart-subtotal><?php echo e(format_currency($totals['subtotal'])); ?></strong>
                     </div>
                 </div>
 

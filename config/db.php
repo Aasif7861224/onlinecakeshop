@@ -24,7 +24,7 @@ if (!function_exists('db')) {
         );
 
         if ($serverConnection->connect_error) {
-            die('Database connection failed: ' . $serverConnection->connect_error);
+            throw new RuntimeException('Database connection failed.');
         }
 
         $databaseName = preg_replace('/[^a-zA-Z0-9_]/', '', $config['database']['name']);

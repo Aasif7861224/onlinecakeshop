@@ -1,5 +1,6 @@
 <?php
 $pageTitle = isset($pageTitle) ? $pageTitle : config_value('app.name');
+$metaDescription = isset($metaDescription) ? $metaDescription : 'Secure online cake ordering with account, cart, and admin dashboard support.';
 $adminLayout = !empty($adminLayout);
 $currentPage = isset($currentPage) ? $currentPage : '';
 $currentUser = current_user();
@@ -12,11 +13,13 @@ $flashMessages = consume_flash_messages();
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title><?php echo e($pageTitle); ?> | <?php echo e(config_value('app.name')); ?></title>
+    <meta name="description" content="<?php echo e($metaDescription); ?>">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&family=Fraunces:opsz,wght@9..144,600;9..144,700&display=swap" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
     <link rel="stylesheet" href="<?php echo e(asset_url('css/app.css')); ?>">
+    <script>window.CAKE_SHOP_API_URL = <?php echo json_encode(rtrim(config_value('app.base_path', ''), '/')); ?>;</script>
 </head>
 <body class="<?php echo $adminLayout ? 'admin-body' : 'site-body'; ?>">
     <nav class="navbar navbar-expand-lg navbar-light site-navbar fixed-top">
@@ -45,7 +48,7 @@ $flashMessages = consume_flash_messages();
                     <ul class="navbar-nav me-auto mb-2 mb-lg-0">
                         <li class="nav-item"><a class="nav-link <?php echo $currentPage === 'home' ? 'active' : ''; ?>" href="<?php echo e(site_url('index.php')); ?>">Home</a></li>
                         <li class="nav-item"><a class="nav-link <?php echo $currentPage === 'shop' ? 'active' : ''; ?>" href="<?php echo e(site_url('shop.php')); ?>">Shop</a></li>
-                        <li class="nav-item"><a class="nav-link <?php echo $currentPage === 'cart' ? 'active' : ''; ?>" href="<?php echo e(site_url('cart.php')); ?>">Cart <span class="badge text-bg-dark"><?php echo (int) $cartCount; ?></span></a></li>
+                        <li class="nav-item"><a class="nav-link <?php echo $currentPage === 'cart' ? 'active' : ''; ?>" href="<?php echo e(site_url('cart.php')); ?>">Cart <span class="badge text-bg-dark" data-cart-count><?php echo (int) $cartCount; ?></span></a></li>
                     </ul>
                     <div class="d-flex align-items-center gap-2">
                         <?php if ($currentUser && $currentUser['role'] === 'admin'): ?>

@@ -65,6 +65,7 @@ require_once __DIR__ . '/../includes/header.php';
                                 <option value="Delivered" <?php echo selected($order['status'], 'Delivered'); ?>>Delivered</option>
                             </select>
                             <button class="btn btn-primary w-100" type="submit">Update status</button>
+                            <a class="btn btn-outline-dark w-100 mt-2" href="<?php echo e(site_url('invoice.php?order_id=' . (int) $order['id'])); ?>">Invoice</a>
                         </form>
                     </div>
                 </div>

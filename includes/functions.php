@@ -176,14 +176,15 @@ if (!function_exists('csrf_token')) {
 if (!function_exists('csrf_field')) {
     function csrf_field()
     {
-        return '<input type="hidden" name="_token" value="' . e(csrf_token()) . '">';
+        $token = e(csrf_token());
+        return '<input type="hidden" name="_token" value="' . $token . '"><input type="hidden" name="csrf_token" value="' . $token . '">';
     }
 }
 
 if (!function_exists('verify_csrf_token')) {
     function verify_csrf_token($token = null)
     {
-        $submittedToken = $token !== null ? $token : (isset($_POST['_token']) ? $_POST['_token'] : '');
+        $submittedToken = $token !== null ? $token : (isset($_POST['_token']) ? $_POST['_token'] : (isset($_POST['csrf_token']) ? $_POST['csrf_token'] : ''));
         $sessionToken = isset($_SESSION['csrf_token']) ? $_SESSION['csrf_token'] : '';
 
         return !empty($submittedToken) && !empty($sessionToken) && hash_equals($sessionToken, $submittedToken);
@@ -211,11 +212,17 @@ if (!function_exists('db_statement')) {
     {
         $statement = db()->prepare($sql);
         if (!$statement) {
-            die('Query prepare failed: ' . db()->error);
+            app_log('database', 'Query prepare failed', array('sql' => $sql, 'error' => db()->error));
+            throw new RuntimeException('A database operation could not be prepared.');
         }
 
         db_bind_params($statement, $types, $params);
-        $statement->execute();
+        if (!$statement->execute()) {
+            $error = $statement->error;
+            $statement->close();
+            app_log('database', 'Query execute failed', array('sql' => $sql, 'error' => $error));
+            throw new RuntimeException('A database operation failed to run.');
+        }
 
         return $statement;
     }
@@ -844,6 +851,13 @@ if (!function_exists('create_order_items')) {
     }
 }
 
+if (!function_exists('log_order_status')) {
+    function log_order_status($orderId, $status)
+    {
+        db_statement('INSERT INTO order_status_logs (order_id, status, changed_at) VALUES (?, ?, NOW())', 'is', array((int) $orderId, $status))->close();
+    }
+}
+
 if (!function_exists('placeCashOrder')) {
     function placeCashOrder($userId, $deliveryDate, $addressSnapshot)
     {
@@ -862,6 +876,7 @@ if (!function_exists('placeCashOrder')) {
             db_statement('INSERT INTO orders (user_id, total_price, status, payment_method, payment_status, delivery_date, address_snapshot, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, NOW(), NOW())', 'idsssss', array((int) $userId, $totals['subtotal'], $status, $paymentMethod, $paymentStatus, $deliveryDate, $addressSnapshot))->close();
             $orderId = db()->insert_id;
             create_order_items($orderId, $items);
+            log_order_status($orderId, $status);
             clearCart($userId);
             db()->commit();
             send_order_confirmation_email($orderId);
@@ -946,6 +961,7 @@ if (!function_exists('createPendingRazorpayOrder')) {
             db_statement('INSERT INTO orders (user_id, total_price, status, payment_method, payment_status, delivery_date, address_snapshot, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, NOW(), NOW())', 'idsssss', array((int) $userId, $totals['subtotal'], $status, $paymentMethod, $paymentStatus, $deliveryDate, $addressSnapshot))->close();
             $orderId = db()->insert_id;
             create_order_items($orderId, $items);
+            log_order_status($orderId, $status);
 
             $gatewayResponse = create_razorpay_order_request($orderId, $totals['subtotal']);
             if (!$gatewayResponse['success']) {
@@ -1013,6 +1029,7 @@ if (!function_exists('getUserOrders')) {
 
         foreach ($orders as &$order) {
             $order['items'] = db_fetch_all(db_statement('SELECT * FROM order_items WHERE order_id = ? ORDER BY id ASC', 'i', array((int) $order['id'])));
+            $order['status_logs'] = db_fetch_all(db_statement('SELECT * FROM order_status_logs WHERE order_id = ? ORDER BY changed_at DESC', 'i', array((int) $order['id'])));
         }
 
         return $orders;
@@ -1031,6 +1048,63 @@ if (!function_exists('getDashboardStats')) {
             'orders' => $ordersRow ? (int) $ordersRow['total'] : 0,
             'products' => $productsRow ? (int) $productsRow['total'] : 0,
             'revenue' => $ordersRow ? (float) $ordersRow['revenue'] : 0.00,
+        );
+    }
+}
+
+if (!function_exists('getAdminAnalytics')) {
+    function getAdminAnalytics()
+    {
+        $ordersPerDayRows = db_fetch_all(db_statement("SELECT DATE(created_at) AS day_key, COUNT(*) AS total
+            FROM orders
+            WHERE created_at >= DATE_SUB(CURDATE(), INTERVAL 6 DAY)
+            GROUP BY DATE(created_at)
+            ORDER BY day_key ASC"));
+
+        $ordersPerDayMap = array();
+        foreach ($ordersPerDayRows as $row) {
+            $ordersPerDayMap[$row['day_key']] = (int) $row['total'];
+        }
+
+        $ordersPerDay = array();
+        for ($i = 6; $i >= 0; $i--) {
+            $day = date('Y-m-d', strtotime("-{$i} days"));
+            $ordersPerDay[] = array(
+                'label' => date('d M', strtotime($day)),
+                'total' => isset($ordersPerDayMap[$day]) ? $ordersPerDayMap[$day] : 0,
+            );
+        }
+
+        $monthlyRevenueRows = db_fetch_all(db_statement("SELECT DATE_FORMAT(created_at, '%Y-%m') AS month_key, COALESCE(SUM(total_price), 0) AS total
+            FROM orders
+            WHERE created_at >= DATE_SUB(CURDATE(), INTERVAL 11 MONTH)
+            GROUP BY DATE_FORMAT(created_at, '%Y-%m')
+            ORDER BY month_key ASC"));
+
+        $monthlyRevenueMap = array();
+        foreach ($monthlyRevenueRows as $row) {
+            $monthlyRevenueMap[$row['month_key']] = (float) $row['total'];
+        }
+
+        $monthlyRevenue = array();
+        for ($i = 11; $i >= 0; $i--) {
+            $month = date('Y-m', strtotime(date('Y-m-01') . " -{$i} months"));
+            $monthlyRevenue[] = array(
+                'label' => date('M Y', strtotime($month . '-01')),
+                'total' => isset($monthlyRevenueMap[$month]) ? $monthlyRevenueMap[$month] : 0,
+            );
+        }
+
+        $topProducts = db_fetch_all(db_statement("SELECT product_name, SUM(quantity) AS quantity_sold, SUM(line_total) AS revenue
+            FROM order_items
+            GROUP BY product_name
+            ORDER BY quantity_sold DESC, revenue DESC
+            LIMIT 5"));
+
+        return array(
+            'orders_per_day' => $ordersPerDay,
+            'monthly_revenue' => $monthlyRevenue,
+            'top_products' => $topProducts,
         );
     }
 }
@@ -1061,8 +1135,69 @@ if (!function_exists('updateOrderStatus')) {
         }
 
         db_statement('UPDATE orders SET status = ?, updated_at = NOW() WHERE id = ?', 'si', array($status, (int) $orderId))->close();
+        log_order_status($orderId, $status);
 
         return true;
+    }
+}
+
+if (!function_exists('resize_uploaded_image')) {
+    function resize_uploaded_image($sourcePath, $destinationPath, $mimeType, $extension, $maxWidth = 1400, $maxHeight = 1400)
+    {
+        if (!function_exists('imagecreatetruecolor')) {
+            return move_uploaded_file($sourcePath, $destinationPath);
+        }
+
+        switch ($mimeType) {
+            case 'image/jpeg':
+                $sourceImage = imagecreatefromjpeg($sourcePath);
+                break;
+            case 'image/png':
+                $sourceImage = imagecreatefrompng($sourcePath);
+                break;
+            case 'image/webp':
+                if (!function_exists('imagecreatefromwebp')) {
+                    return move_uploaded_file($sourcePath, $destinationPath);
+                }
+                $sourceImage = imagecreatefromwebp($sourcePath);
+                break;
+            default:
+                return false;
+        }
+
+        if (!$sourceImage) {
+            return false;
+        }
+
+        $width = imagesx($sourceImage);
+        $height = imagesy($sourceImage);
+        $scale = min($maxWidth / max($width, 1), $maxHeight / max($height, 1), 1);
+        $newWidth = max(1, (int) round($width * $scale));
+        $newHeight = max(1, (int) round($height * $scale));
+
+        $resizedImage = imagecreatetruecolor($newWidth, $newHeight);
+        if (in_array($mimeType, array('image/png', 'image/webp'), true)) {
+            imagealphablending($resizedImage, false);
+            imagesavealpha($resizedImage, true);
+            $transparent = imagecolorallocatealpha($resizedImage, 0, 0, 0, 127);
+            imagefilledrectangle($resizedImage, 0, 0, $newWidth, $newHeight, $transparent);
+        }
+
+        imagecopyresampled($resizedImage, $sourceImage, 0, 0, 0, 0, $newWidth, $newHeight, $width, $height);
+
+        $saved = false;
+        if ($extension === 'jpg' || $extension === 'jpeg') {
+            $saved = imagejpeg($resizedImage, $destinationPath, 82);
+        } elseif ($extension === 'png') {
+            $saved = imagepng($resizedImage, $destinationPath, 6);
+        } elseif ($extension === 'webp' && function_exists('imagewebp')) {
+            $saved = imagewebp($resizedImage, $destinationPath, 82);
+        }
+
+        imagedestroy($sourceImage);
+        imagedestroy($resizedImage);
+
+        return $saved;
     }
 }
 
@@ -1110,7 +1245,7 @@ if (!function_exists('handleImageUpload')) {
         $fileName = trim($folder, '/') . '-' . date('YmdHis') . '-' . bin2hex(random_bytes(4)) . '.' . $extension;
         $targetPath = $targetDir . DIRECTORY_SEPARATOR . $fileName;
 
-        if (!move_uploaded_file($file['tmp_name'], $targetPath)) {
+        if (!resize_uploaded_image($file['tmp_name'], $targetPath, $mimeType, $extension)) {
             return array('success' => false, 'message' => 'Unable to move uploaded image.');
         }
 

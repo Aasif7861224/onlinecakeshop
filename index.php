@@ -2,6 +2,7 @@
 require_once __DIR__ . '/includes/bootstrap.php';
 
 $pageTitle = 'Fresh cakes for every celebration';
+$metaDescription = 'Order celebration cakes online with a secure cart, search, reviews, and account tracking.';
 $currentPage = 'home';
 $categories = getCategories();
 $featuredProducts = getProducts(array('limit' => 6));
@@ -78,7 +79,7 @@ require_once __DIR__ . '/includes/header.php';
                             <p class="subtle-text mb-4"><?php echo e(substr($product['description'], 0, 120)); ?>...</p>
                             <div class="mt-auto d-flex gap-2">
                                 <a class="btn btn-dark" href="<?php echo e(site_url('product.php?id=' . (int) $product['id'])); ?>">View details</a>
-                                <form method="post" action="<?php echo e(site_url('cart.php?action=add')); ?>">
+                                <form method="post" action="<?php echo e(site_url('cart.php?action=add')); ?>" data-ajax-cart-form="add">
                                     <?php echo csrf_field(); ?>
                                     <input type="hidden" name="product_id" value="<?php echo (int) $product['id']; ?>">
                                     <input type="hidden" name="quantity" value="1">
