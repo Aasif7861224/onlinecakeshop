@@ -178,6 +178,18 @@ if (!function_exists('ensure_database_schema')) {
             schema_execute($connection, $query);
         }
 
+        $missingLogs = $connection->query('SELECT id, status FROM orders WHERE id NOT IN (SELECT order_id FROM order_status_logs)');
+        if ($missingLogs instanceof mysqli_result) {
+            while ($row = $missingLogs->fetch_assoc()) {
+                $insertLog = $connection->prepare('INSERT INTO order_status_logs (order_id, status, changed_at) VALUES (?, ?, NOW())');
+                $orderId = (int) $row['id'];
+                $status = $row['status'];
+                $insertLog->bind_param('is', $orderId, $status);
+                $insertLog->execute();
+                $insertLog->close();
+            }
+        }
+
         migrate_legacy_data_if_needed($connection);
         seed_default_data($connection);
 

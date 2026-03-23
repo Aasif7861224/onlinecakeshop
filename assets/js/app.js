@@ -120,11 +120,6 @@
         var clearForm = event.target.closest('[data-ajax-cart-clear]');
         if (clearForm) {
             event.preventDefault();
-            var button = clearForm.querySelector('[data-confirm]');
-            if (button && !window.confirm(button.getAttribute('data-confirm'))) {
-                return;
-            }
-
             var clearData = new FormData(clearForm);
             clearData.append('cart_action', 'clear');
             sendCartRequest(clearData).then(function (data) {

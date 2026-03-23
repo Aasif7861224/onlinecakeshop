@@ -248,3 +248,29 @@ body {
         border-radius: 0 0 var(--cake-radius) var(--cake-radius);
     }
 }
+
+@media print {
+    .site-navbar,
+    .site-footer,
+    .btn,
+    .toast-container {
+        display: none !important;
+    }
+
+    body {
+        background: #ffffff;
+    }
+
+    .page-shell {
+        padding-top: 0;
+    }
+
+    .surface-card,
+    .summary-card,
+    .form-surface,
+    .table-card,
+    .order-card {
+        box-shadow: none;
+        border: 1px solid #dddddd;
+    }
+}
