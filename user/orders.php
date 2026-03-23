@@ -22,15 +22,8 @@ $pageTitle = 'My Orders';
 $metaDescription = 'Track recent and old orders, cancel active orders, and leave feedback after delivery.';
 $userSection = 'orders';
 require_once __DIR__ . '/../includes/header.php';
-require_once __DIR__ . '/../includes/user_nav.php';
 ?>
 <div class="container py-4 py-lg-5">
-    <div class="mb-4">
-        <span class="section-label">Orders</span>
-        <h1 class="section-title">Recent and old orders</h1>
-        <p class="subtle-text">Yahan active, recent, aur old orders alag dikh rahe hain. Delivered hone ke baad rating option bhi yahin se milega.</p>
-    </div>
-
     <?php
     $sections = array(
         'recent' => array(
@@ -56,10 +49,7 @@ require_once __DIR__ . '/../includes/user_nav.php';
             </div>
 
             <?php if (empty($orderGroups[$key])): ?>
-                <div class="surface-card empty-state">
-                    <h3 class="h5"><?php echo e($section['empty']); ?></h3>
-                    <p class="mb-0 subtle-text">Cake order karne ke baad tracking yahin show hogi.</p>
-                </div>
+                
             <?php else: ?>
                 <div class="d-grid gap-3">
                     <?php foreach ($orderGroups[$key] as $order): ?>

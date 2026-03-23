@@ -49,6 +49,7 @@ $flashMessages = consume_flash_messages();
                         <li class="nav-item"><a class="nav-link <?php echo $currentPage === 'home' ? 'active' : ''; ?>" href="<?php echo e(site_url('index.php')); ?>">Home</a></li>
                         <li class="nav-item"><a class="nav-link <?php echo $currentPage === 'shop' ? 'active' : ''; ?>" href="<?php echo e(site_url('shop.php')); ?>">Shop</a></li>
                         <li class="nav-item"><a class="nav-link <?php echo $currentPage === 'cart' ? 'active' : ''; ?>" href="<?php echo e(site_url('cart.php')); ?>">Cart <span class="badge text-bg-dark" data-cart-count><?php echo (int) $cartCount; ?></span></a></li>
+                        <li class="nav-item"><a class="nav-link <?php echo $currentPage === 'orders' ? 'active' : ''; ?>" href="<?php echo e(site_url('user/orders.php')); ?>">Orders</a></li>
                     </ul>
                     <div class="d-flex align-items-center gap-2">
                         <?php if ($currentUser && $currentUser['role'] === 'admin'): ?>

@@ -2,8 +2,7 @@
 
     <footer class="site-footer">
         <div class="container d-flex flex-column flex-lg-row justify-content-between align-items-center gap-2">
-            <p class="mb-0">Fresh cakes, secure checkout, and smoother order tracking built on a reusable PHP foundation.</p>
-            <p class="mb-0 small">Default admin: <code>admin@cakeshop.local</code> / <code>admin123</code></p>
+            <p class="mb-0">Fresh cakes, secure checkout, and smoother order tracking </p>
         </div>
     </footer>
 

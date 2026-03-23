@@ -211,7 +211,7 @@ require_once __DIR__ . '/includes/header.php';
                             </table>
                         </div>
                         <div class="d-flex flex-wrap gap-2 justify-content-between mt-3">
-                            <button class="btn btn-primary" type="submit">Update cart</button>
+                            
                             <a class="btn btn-outline-dark" href="<?php echo e(site_url('shop.php')); ?>">Continue shopping</a>
                         </div>
                     </form>
@@ -262,7 +262,8 @@ require_once __DIR__ . '/includes/header.php';
                             <button class="btn btn-dark w-100" type="submit">Place COD order</button>
                         </form>
 
-                        <form method="post" action="<?php echo e(site_url('cart.php?action=create_razorpay')); ?>">
+                        <!-- / * Razorpay checkout form - Uncomment if you want to enable online payments * / -->
+                         <!-- <form method="post" action="<?php echo e(site_url('cart.php?action=create_razorpay')); ?>">
                             <?php echo csrf_field(); ?>
                             <div class="mb-3">
                                 <label class="form-label">Delivery address</label>
@@ -276,7 +277,7 @@ require_once __DIR__ . '/includes/header.php';
                             <?php if (!payment_is_configured()): ?>
                                 <p class="small subtle-text mt-2 mb-0">Add `RAZORPAY_KEY_ID` and `RAZORPAY_KEY_SECRET` to enable online payments.</p>
                             <?php endif; ?>
-                        </form>
+                        </form>  -->
                     </div>
                 <?php endif; ?>
             </div>

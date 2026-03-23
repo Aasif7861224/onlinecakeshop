@@ -46,7 +46,6 @@ $pageTitle = 'User Dashboard';
 $metaDescription = 'Manage your personal details, saved address, password, and account summary.';
 $userSection = 'dashboard';
 require_once __DIR__ . '/../includes/header.php';
-require_once __DIR__ . '/../includes/user_nav.php';
 ?>
 <div class="container py-4 py-lg-5">
     <div class="mb-4">

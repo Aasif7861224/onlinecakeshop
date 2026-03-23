@@ -94,7 +94,7 @@ require_once __DIR__ . '/includes/header.php';
         </div>
     </section>
 
-    <section class="summary-card">
+    <!-- <section class="summary-card">
         <div class="row g-4 align-items-center">
             <div class="col-lg-4">
                 <span class="section-label">Why this reset matters</span>
@@ -108,6 +108,6 @@ require_once __DIR__ . '/includes/header.php';
                 </div>
             </div>
         </div>
-    </section>
+    </section> -->
 </div>
 <?php require_once __DIR__ . '/includes/footer.php'; ?>
