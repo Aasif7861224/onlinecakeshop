@@ -1,243 +1,96 @@
 <?php
-session_start();
-if (!empty($_SESSION['cart'])) {
-	$printCount = count($_SESSION['cart']);
-}
-else {
-	$printCount = 0;
-}
-if (!empty($_SESSION['user_users_id']) && !empty($_SESSION['user_users_username'])) {
-    $printUsername = $_SESSION['user_users_username'];
-}
-else {
-    $printUsername = "None"; 
-}
+require_once __DIR__ . '/includes/bootstrap.php';
+
+$pageTitle = 'Shop';
+$currentPage = 'shop';
+
+$filters = array(
+    'q' => isset($_GET['q']) ? trim($_GET['q']) : '',
+    'category' => isset($_GET['category']) ? (int) $_GET['category'] : null,
+    'min_price' => isset($_GET['min_price']) ? trim($_GET['min_price']) : '',
+    'max_price' => isset($_GET['max_price']) ? trim($_GET['max_price']) : '',
+);
+
+$categories = getCategories();
+$products = getProducts($filters);
+
+require_once __DIR__ . '/includes/header.php';
 ?>
-<!doctype html>
-<html lang="en">
- 
-<head>
-    <!-- Required meta tags -->
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-    <title>OCS - Shop</title>
-    <!-- Bootstrap CSS -->
-    <link rel="stylesheet" href="css/bootstrap.min.css">
-    <link href="fonts/circular-std/style.css" rel="stylesheet">
-    <link rel="stylesheet" href="css/style.css">
-    <link rel="stylesheet" href="css/userpage.css">
-    <link rel="stylesheet" href="fonts/fontawesome/css/fontawesome-all.css">
-    <link rel="stylesheet" type="text/css" href="css/owl.carousel.min.css">
-    <link rel="stylesheet" type="text/css" href="css/owl.theme.default.min.css">
-</head>
-
-<body>
-    <!-- ============================================================== -->
-    <!-- main wrapper -->
-    <!-- ============================================================== -->
-    <div class="dashboard-main-wrapper">
-         <!-- ============================================================== -->
-        <!-- navbar -->
-        <!-- ============================================================== -->
-         <div class="dashboard-header">
-            <nav class="navbar navbar-expand-lg bg-white fixed-top">
-                <a class="navbar-brand" href="#">Online Cake Shop</a>
-                <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
-                    <span><i class="fas fa-bars mx-3
-"></i></span>
-                </button>
-                <div class="collapse navbar-collapse " id="navbarSupportedContent">
-                    <ul class="navbar-nav ml-auto navbar-right-top">
-                        <li class="nav-item">
-                            <a class="nav-link" href="index.php">Home</a>
-                        </li>
-                        <li class="nav-item dropdown">
-                            <a class="nav-link active" href="#" id="navbarDropdownMenuLink1" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Shop</a>
-                            <div class="dropdown-menu dropdown-menu-right" aria-labelledby="navbarDropdownMenuLink1">
-                            <?php
-                            require_once('config.php');
-                            $select = "SELECT * FROM cake_shop_category";
-                            $query = mysqli_query($conn, $select);
-                            while ($res = mysqli_fetch_assoc($query)) {
-                            ?>
-                                <a class="dropdown-item" href="shop.php?category=<?php echo $res['category_id'];?>">
-                                    <?php echo $res['category_name'];?>
-                                </a>
-                            <?php
-                            }
-                            ?>
-                            </div>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" href="cart.php"><i class="fas fa-shopping-cart"></i> <span class="badge badge-pill badge-secondary"><?php echo $printCount;?></span></a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" href="about.php">About us</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" href="contact.php">Contact</a>
-                        </li>
-                        <li class="nav-item dropdown nav-user">
-                            <a class="nav-link nav-user-img" href="#" id="navbarDropdownMenuLink2" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false"><img src="uploads/default-image.jpg" alt="" class="user-avatar-md rounded-circle"></a>
-                            <div class="dropdown-menu dropdown-menu-right nav-user-dropdown" aria-labelledby="navbarDropdownMenuLink2">
-                                <div class="nav-user-info">
-                                    <h5 class="mb-0 text-white nav-user-name"><?php echo $printUsername;?></h5>
-                                    <span class="status"></span><span class="ml-2">Available</span>
-                                </div>
-                                <a class="dropdown-item" href="account_users.php"><i class="fas fa-user mr-2"></i>Account</a>
-                                <a class="dropdown-item" href="login_users.php"><i class="fas fa-sign-in-alt mr-2"></i>Login</a>
-                                <a class="dropdown-item" href="logout_users.php"><i class="fas fa-power-off mr-2"></i>Logout</a>
-                            </div>
-                        </li>
-                    </ul>
-                </div>
-            </nav>
-        </div>
-        <!-- ============================================================== -->
-        <!-- end navbar -->
-        <!-- ============================================================== -->
-        
-        <!-- ============================================================== -->
-        <!-- wrapper  -->
-        <!-- ============================================================== -->
-        <!-- <div class="dashboard-wrapper"> -->
-            <div class="container-fluid dashboard-content">    
-                
-                <div class="row">
-                    <div class="col-xl-12 col-lg-12 col-md-12 col-sm-12 col-12">
-                        <div class="page-header">
-                            <h2 class="pageheader-title">Products</h2>
-                            <p class="pageheader-text">Proin placerat ante duiullam scelerisque a velit ac porta, fusce sit amet vestibulum mi. Morbi lobortis pulvinar quam.</p>
-                            <div class="page-breadcrumb">
-                                <nav aria-label="breadcrumb">
-                                    <ol class="breadcrumb">
-                                        <li class="breadcrumb-item"><a href="index.php" class="breadcrumb-link">Home</a></li>
-                                        <li class="breadcrumb-item active" aria-current="page">Our products</li>
-                                    </ol>
-                                </nav>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="row mx-5">
-
-                    <?php
-                    require_once('config.php');
-                    $select = "SELECT * FROM cake_shop_product where product_category = ".$_GET['category'];
-                    $query = mysqli_query($conn, $select);
-                    while ($res = mysqli_fetch_assoc($query)) {
-                    ?>
-                    <div class="col-xl-3 col-lg-3 col-md-6 col-sm-12 col-12">
-                        <div class="product-thumbnail rounded">
-                            <div class="product-img-head">
-                                <div class="product-img">
-                                    <?php
-                                    $file_array = explode(', ', $res['product_image']);
-                                    ?>
-                                    <img src="uploads/<?php echo $file_array[0];?>" class="img-fluid">
-                                </div>
-                            </div>
-                            <div class="product-content">
-                                <div class="product-content-head">
-                                    <h3 class="product-title"><?php echo $res['product_name'];?></h3>
-                                    <div class="product-price">Rs. <?php echo $res['product_price'];?></div>
-                                </div>
-                                <div class="product_btn">
-                                    <button onclick="add_cart(<?php echo $res['product_id'];?>)" class="btn btn-primary">Add to Cart</button>
-                                    <!-- <a href="#" onclick="add_cart(<?php echo $res['product_id'];?>)" class="btn btn-primary">Add to Cart</a> -->
-                                    <a href="single_product.php?product_id=<?php echo $res['product_id'];?>" class="btn btn-outline-light">Details</a>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <?php } ?>
-
-                </div>
-
-                <div class="row m-5">
-                    <div class="col-xl-12 col-lg-12 col-md-12 col-sm-12 col-12 text-center">
-                        <h1>Our Categories</h1>
-                    </div>
-                    <div class="col-xl-12 col-lg-12 col-md-12 col-sm-12 col-12">
-                        <div class="owl-carousel owl-theme">
-                            <?php
-                            require_once('config.php');
-                            $select = "SELECT * FROM cake_shop_category";
-                            $query = mysqli_query($conn, $select);
-                            while ($res = mysqli_fetch_assoc($query)) {
-                            ?>
-                            <div class="item">
-                                <div class="card h-100">
-                                    <div class="card-body">
-                                        <h3 class="card-title"><?php echo $res['category_name'];?></h3>
-                                        <a href="shop.php?category=<?php echo $res['category_id'];?>"><img class="card-img" src="uploads/<?php echo $res['category_image'];?>"></a>
-                                    </div>
-                                    
-                                </div>
-                            </div>
-                            <?php
-                            }
-                            ?>
-                        </div>
-                    </div>
-                </div>
-
-            </div>
-            <!-- ============================================================== -->
-            <!-- footer -->
-            <!-- ============================================================== -->
-            <div class="footer">
-                <div class="container-fluid">
-                    <div class="row">
-                        <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12 col-12">
-                            Copyright © 2018 Concept. All rights reserved. Dashboard by <a href="https://colorlib.com/wp/">Colorlib</a>.
-                        </div>
-                        <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12 col-12">
-                            <div class="text-md-right footer-links d-none d-sm-block">
-                                <a href="javascript: void(0);">About</a>
-                                <a href="javascript: void(0);">Support</a>
-                                <a href="javascript: void(0);">Contact Us</a>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <!-- ============================================================== -->
-            <!-- end footer -->
-            <!-- ============================================================== -->
-        <!-- </div> -->
+<div class="container py-4 py-lg-5">
+    <div class="mb-4">
+        <span class="section-label">Search and filter</span>
+        <h1 class="section-title">Find the right cake faster</h1>
+        <p class="subtle-text">Use category and price filters, or search by cake name.</p>
     </div>
-    <!-- ============================================================== -->
-    <!-- end main wrapper -->
-    <!-- ============================================================== -->
-    <!-- Optional JavaScript -->
-    <script src="js/jquery-3.3.1.min.js"></script>
-    <script src="js/bootstrap.bundle.js"></script>
-    <script src="js/jquery.slimscroll.js"></script>
-    <script src="js/main-js.js"></script>
-    <script type="text/javascript" src="js/owl.carousel.min.js"></script>
-    <script>
-        $(document).ready(function(){
-            $('.owl-carousel').owlCarousel({
-                loop: true, margin: 10, dots: 0, autoplay: 4000, autoplayHoverPause: true, responsive:{
-                    0:{items:1}, 600:{items:2}, 1000:{items:4}
-                }
-            })
-        });
-        function add_cart(product_id) {
-                $.ajax({
-                    url:'fetch_cart.php',
-                    data:'id='+product_id,
-                    method:'get',
-                    dataType:'json',
-                    success:function(cart){
-                        console.log(cart);
-                        $('.badge').html(cart.length);
-                    }
-                });
-            }
-    </script>
-</body>
- 
-</html>
+
+    <section class="form-surface mb-4">
+        <form method="get" class="filter-grid">
+            <div>
+                <label class="form-label">Keyword</label>
+                <input class="form-control" type="search" name="q" value="<?php echo e($filters['q']); ?>" placeholder="Chocolate, red velvet...">
+            </div>
+            <div>
+                <label class="form-label">Category</label>
+                <select class="form-select" name="category">
+                    <option value="">All categories</option>
+                    <?php foreach ($categories as $category): ?>
+                        <option value="<?php echo (int) $category['id']; ?>" <?php echo selected($filters['category'], $category['id']); ?>><?php echo e($category['name']); ?></option>
+                    <?php endforeach; ?>
+                </select>
+            </div>
+            <div>
+                <label class="form-label">Min price</label>
+                <input class="form-control" type="number" min="0" step="1" name="min_price" value="<?php echo e($filters['min_price']); ?>" placeholder="0">
+            </div>
+            <div>
+                <label class="form-label">Max price</label>
+                <input class="form-control" type="number" min="0" step="1" name="max_price" value="<?php echo e($filters['max_price']); ?>" placeholder="1500">
+            </div>
+            <div class="d-flex align-items-end gap-2">
+                <button class="btn btn-primary w-100" type="submit">Apply filters</button>
+                <a class="btn btn-outline-dark" href="<?php echo e(site_url('shop.php')); ?>">Reset</a>
+            </div>
+        </form>
+    </section>
+
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <p class="mb-0 subtle-text"><?php echo count($products); ?> product(s) found.</p>
+    </div>
+
+    <?php if (empty($products)): ?>
+        <div class="surface-card empty-state">
+            <h2 class="h4">No cakes matched these filters</h2>
+            <p class="mb-0">Try clearing the search or widening your price range.</p>
+        </div>
+    <?php else: ?>
+        <div class="row g-4">
+            <?php foreach ($products as $product): ?>
+                <div class="col-md-6 col-xl-4">
+                    <div class="product-card h-100">
+                        <img src="<?php echo e(site_url($product['image_path'])); ?>" alt="<?php echo e($product['name']); ?>">
+                        <div class="card-body d-flex flex-column">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <span class="rating-chip"><?php echo number_format((float) $product['average_rating'], 1); ?> / 5</span>
+                                <span class="price-tag"><?php echo e(format_currency($product['price'])); ?></span>
+                            </div>
+                            <h3 class="h4 mb-1"><?php echo e($product['name']); ?></h3>
+                            <p class="subtle-text mb-2"><?php echo e($product['category_name']); ?></p>
+                            <p class="subtle-text mb-4"><?php echo e(substr($product['description'], 0, 110)); ?>...</p>
+                            <div class="mt-auto d-flex gap-2">
+                                <a class="btn btn-dark" href="<?php echo e(site_url('product.php?id=' . (int) $product['id'])); ?>">Details</a>
+                                <form method="post" action="<?php echo e(site_url('cart.php?action=add')); ?>">
+                                    <?php echo csrf_field(); ?>
+                                    <input type="hidden" name="product_id" value="<?php echo (int) $product['id']; ?>">
+                                    <input type="hidden" name="quantity" value="1">
+                                    <input type="hidden" name="redirect_to" value="<?php echo e($_SERVER['REQUEST_URI']); ?>">
+                                    <button class="btn btn-outline-dark" type="submit">Add to cart</button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            <?php endforeach; ?>
+        </div>
+    <?php endif; ?>
+</div>
+<?php require_once __DIR__ . '/includes/footer.php'; ?>

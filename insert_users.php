@@ -1,19 +1,21 @@
 <?php
-require_once('config.php');
-$users_username = $_POST['users_username'];
-$users_email = $_POST['users_email'];
-$users_password = $_POST['users_password'];
-$users_mobile = $_POST['users_mobile'];
-$users_address = $_POST['users_address'];
-$insert = "INSERT INTO cake_shop_users_registrations (users_username, users_email, users_password, users_mobile, users_address) values ('$users_username', '$users_email', '$users_password', '$users_mobile', '$users_address')";
-$select = "SELECT * FROM cake_shop_users_registrations where users_username = '$users_username'";
-$query = mysqli_query($conn, $select);
-$res = mysqli_fetch_assoc($query);
-if (mysqli_num_rows($query) > 0) {
-	header("Location: register.php?register_msg=1");
+require_once __DIR__ . '/includes/bootstrap.php';
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $password = isset($_POST['users_password']) ? $_POST['users_password'] : '';
+    $result = register_user(array(
+        'username' => isset($_POST['users_username']) ? trim($_POST['users_username']) : '',
+        'email' => isset($_POST['users_email']) ? trim($_POST['users_email']) : '',
+        'password' => $password,
+        'mobile' => isset($_POST['users_mobile']) ? trim($_POST['users_mobile']) : '',
+        'address' => isset($_POST['users_address']) ? trim($_POST['users_address']) : '',
+    ), 'customer');
+
+    if ($result['success']) {
+        login_user($result['user'], false);
+        redirect('user/account.php');
+    }
 }
-else {
-	mysqli_query($conn, $insert);
-	header("Location: login_users.php");
-}
-?>
+
+set_flash('danger', 'Registration failed. Please use the updated registration page.');
+redirect('user/register.php');

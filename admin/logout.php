@@ -1,6 +1,7 @@
 <?php
-session_start();
-unset($_SESSION['user_admin_id']);
-unset($_SESSION['user_admin_username']);
-header("Location: index.php");
-?>
+require_once __DIR__ . '/../includes/bootstrap.php';
+
+logout_user();
+bootstrap_session();
+set_flash('success', 'Admin session closed.');
+redirect('admin/index.php');

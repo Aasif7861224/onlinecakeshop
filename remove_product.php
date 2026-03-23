@@ -1,7 +1,19 @@
 <?php
-$i = $_GET['val_i'];
-session_start();
-unset($_SESSION['cart'][$i]);
-$_SESSION['cart'] = array_values($_SESSION['cart']);
-header("Location: cart.php?remove_success=1");
-?>
+require_once __DIR__ . '/includes/bootstrap.php';
+
+$productId = isset($_GET['product_id']) ? (int) $_GET['product_id'] : 0;
+
+if ($productId <= 0 && isset($_GET['val_i'])) {
+    $cartItems = getCurrentCartItems();
+    $index = (int) $_GET['val_i'];
+    if (isset($cartItems[$index])) {
+        $productId = (int) $cartItems[$index]['product_id'];
+    }
+}
+
+if ($productId > 0) {
+    removeCartItem(current_user_id(), $productId);
+    set_flash('success', 'Item removed from cart.');
+}
+
+redirect('cart.php');

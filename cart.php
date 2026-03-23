@@ -1,277 +1,285 @@
 <?php
-if (isset($_GET['remove_success']) && $_GET['remove_success'] == 1) {
-    echo "<script>alert('Product removed!')</script>";
-    echo "<script>window.location.assign('cart.php')</script>";
-}
-if (isset($_GET['order_success']) && $_GET['order_success'] == 1) {
-    echo "<script>alert('Order placed!')</script>";
-    echo "<script>window.location.assign('cart.php')</script>";
-}
-session_start();
-if (!empty($_SESSION['cart'])) {
-    $printCount = count($_SESSION['cart']);
-}
-else {
-    $printCount = 0;
-}
-if (!empty($_SESSION['user_users_id']) && !empty($_SESSION['user_users_username'])) {
-    $printUsername = $_SESSION['user_users_username'];
-}
-else {
-    $printUsername = "None"; 
-}
-?>
-<!doctype html>
-<html lang="en">
- 
-<head>
-    <!-- Required meta tags -->
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-    <title>OCS - Cart</title>
-    <!-- Bootstrap CSS -->
-    <link rel="stylesheet" href="css/bootstrap.min.css">
-    <link href="fonts/circular-std/style.css" rel="stylesheet">
-    <link rel="stylesheet" href="css/style.css">
-    <link rel="stylesheet" href="css/userpage.css">
-    <link rel="stylesheet" href="fonts/fontawesome/css/fontawesome-all.css">
-    <link rel="stylesheet" type="text/css" href="css/owl.carousel.min.css">
-    <link rel="stylesheet" type="text/css" href="css/owl.theme.default.min.css">
-</head>
+require_once __DIR__ . '/includes/bootstrap.php';
 
-<body>
-    <!-- ============================================================== -->
-    <!-- main wrapper -->
-    <!-- ============================================================== -->
-    <div class="dashboard-main-wrapper">
-         <!-- ============================================================== -->
-        <!-- navbar -->
-        <!-- ============================================================== -->
-         <div class="dashboard-header">
-            <nav class="navbar navbar-expand-lg bg-white fixed-top">
-                <a class="navbar-brand" href="#">Online Cake Shop</a>
-                <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
-                    <span><i class="fas fa-bars mx-3
-"></i></span>
-                </button>
-                <div class="collapse navbar-collapse " id="navbarSupportedContent">
-                    <ul class="navbar-nav ml-auto navbar-right-top">
-                        <li class="nav-item">
-                            <a class="nav-link" href="index.php">Home</a>
-                        </li>
-                        <li class="nav-item dropdown">
-                            <a class="nav-link" href="#" id="navbarDropdownMenuLink1" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Shop</a>
-                            <div class="dropdown-menu dropdown-menu-right" aria-labelledby="navbarDropdownMenuLink1">
-                            <?php
-                            require_once('config.php');
-                            $select = "SELECT * FROM cake_shop_category";
-                            $query = mysqli_query($conn, $select);
-                            while ($res = mysqli_fetch_assoc($query)) {
-                            ?>
-                                <a class="dropdown-item" href="shop.php?category=<?php echo $res['category_id'];?>">
-                                    <?php echo $res['category_name'];?>
-                                </a>
-                            <?php
-                            }
-                            ?>
-                            </div>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link active" href="cart.php"><i class="fas fa-shopping-cart"></i> <span class="badge badge-pill badge-secondary"><?php echo $printCount;?></span></a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" href="about.php">About us</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" href="contact.php">Contact</a>
-                        </li>
-                        <li class="nav-item dropdown nav-user">
-                            <a class="nav-link nav-user-img" href="#" id="navbarDropdownMenuLink2" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false"><img src="uploads/default-image.jpg" alt="" class="user-avatar-md rounded-circle"></a>
-                            <div class="dropdown-menu dropdown-menu-right nav-user-dropdown" aria-labelledby="navbarDropdownMenuLink2">
-                                <div class="nav-user-info">
-                                    <h5 class="mb-0 text-white nav-user-name"><?php echo $printUsername;?></h5>
-                                    <span class="status"></span><span class="ml-2">Available</span>
-                                </div>
-                                <a class="dropdown-item" href="account_users.php"><i class="fas fa-user mr-2"></i>Account</a>
-                                <a class="dropdown-item" href="login_users.php"><i class="fas fa-sign-in-alt mr-2"></i>Login</a>
-                                <a class="dropdown-item" href="logout_users.php"><i class="fas fa-power-off mr-2"></i>Logout</a>
-                            </div>
-                        </li>
-                    </ul>
-                </div>
-            </nav>
-        </div>
-        <!-- ============================================================== -->
-        <!-- end navbar -->
-        <!-- ============================================================== -->
-        
-        <!-- ============================================================== -->
-        <!-- wrapper  -->
-        <!-- ============================================================== -->
-        <!-- <div class="dashboard-wrapper"> -->
-            <div class="container-fluid dashboard-content">    
-                
-                <div class="row">
-                    <div class="col-xl-12 col-lg-12 col-md-12 col-sm-12 col-12">
-                        <div class="page-header">
-                            <h2 class="pageheader-title">Cart</h2>
-                            <p class="pageheader-text">Proin placerat ante duiullam scelerisque a velit ac porta, fusce sit amet vestibulum mi. Morbi lobortis pulvinar quam.</p>
-                            <div class="page-breadcrumb">
-                                <nav aria-label="breadcrumb">
-                                    <ol class="breadcrumb">
-                                        <li class="breadcrumb-item"><a href="index.php" class="breadcrumb-link">Home</a></li>
-                                        <li class="breadcrumb-item active" aria-current="page">Your cart</li>
-                                    </ol>
-                                </nav>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+$action = isset($_GET['action']) ? $_GET['action'] : '';
+$pageTitle = 'Cart';
+$currentPage = 'cart';
+$razorpayCheckout = null;
 
-                <div class="row mx-5">
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && $action !== '') {
+    if (!verify_csrf_token()) {
+        set_flash('danger', 'Your session token expired. Please try again.');
+        redirect('cart.php');
+    }
 
-                    <div class="col-xl-12 col-lg-12 col-md-12 col-sm-12 col-12">
-                    	<div class="card">
-                    		<div class="card-body">
-                    			<div class="table-responsive">
-                    				<table class="table table-bordered">
-                    					<thead>
-                    						<tr>
-                    							<th>S. No.</th>
-                    							<th>Product Name</th>
-                    							<th>Price</th>
-                    							<th>Quantity</th>
-                    							<th>Total</th>
-                    							<th>Action</th>
-                    						</tr>
-                    					</thead>
-                    					<form method="post" action="insert_orders.php">
-                    					<tbody>
-                    						<?php
-                    						if ($printCount == 0) {
-                    						?>
-                    						<tr>
-                    							<td colspan="6" align="center">Your cart is empty!</td>
-                    						</tr>
-                    						<?php } else { ?>
-                    						<?php
-                                            $total_amount = 0;
-                    						require_once('config.php');
-                    						for ($i=0; $i < count($_SESSION['cart']); $i++) { 
-                    							$select = "SELECT * FROM cake_shop_product where product_id = {$_SESSION['cart'][$i]}";
-                    							$query = mysqli_query($conn, $select);
-                    							$j = $i;
-                    							while ($res = mysqli_fetch_assoc($query)) { 
-                                                $total_amount = $total_amount + $res['product_price'];
-                    						?>
-                    						<tr>
-                    							<td><?php echo ++$j;?></td>
-                    							<td><?php echo $res['product_name'];?><input type="hidden" name="hidden_product_name[]" value="<?php echo $res['product_name'];?>"></td>
-                    							<td>Rs. <?php echo $res['product_price'];?><input type="hidden" name="hidden_product_price[]" value="<?php echo $res['product_price'];?>"></td>
-                    							<td><input class="form-control" type="number" min="1" max="9" step="1" value="1" name="product_quantity[]" onchange="prodTotal(this)"></td>
-                    							<td><span>Rs. <?php echo $res['product_price'] * 1;?></span><input type="hidden" name="hidden_product_total[]" value="<?php echo $res['product_price'];?>"></td>
-                    							<td align="center"><a href="remove_product.php?val_i=<?php echo $i;?>"><i class="fas fa-trash-alt"></i></a></td>
-                    						</tr>
-                    					    <?php } ?>
-                    					    <?php } ?>
-                    					    <?php } ?>
-                    					    <tr>
-                    					    	<td colspan="4" align="right">Total Amount:</td>
-                    					    	<td colspan="2" id="total_amount"><span>Rs. <?php if ($printCount == 0){echo 0;} else {echo $total_amount;}?></span><input type="hidden" name="hidden_total_amount" value="<?php echo $total_amount;?>"></td>
-                    					    </tr>
-                                            <tr>
-                                                <td colspan="3">
-                                                    Delivery Date:<input class="form-control" type="date" name="delivery_date" required="">
-                                                </td>
-                                                <td colspan="3">
-                                                    Payment Method:<select class="form-control" name="payment_method">
-                                                        <option>Cash</option>
-                                                        <option>Card</option>
-                                                    </select>
-                                                </td>
-                                            </tr>
-                    					    <tr>
-                    					    	<td colspan="6" align="right">
-                    					    		<button class="btn btn-warning" onclick="clear_cart()">Clear</button>
-                    					    		<button class="btn btn-primary" type="submit">Checkout</button>
-                    					    	</td>
-                    					    </tr>
-                    					</tbody>
-                    					</form>
-                    				</table>
-                    			</div>
-                    		</div>
-                    	</div>
-                    </div>
+    if ($action === 'add') {
+        $productId = isset($_POST['product_id']) ? (int) $_POST['product_id'] : 0;
+        $quantity = isset($_POST['quantity']) ? (int) $_POST['quantity'] : 1;
+        $redirectTo = !empty($_POST['redirect_to']) ? $_POST['redirect_to'] : site_url('cart.php');
 
-                </div>
-
-            </div>
-            <!-- ============================================================== -->
-            <!-- footer -->
-            <!-- ============================================================== -->
-            <div class="footer">
-                <div class="container-fluid">
-                    <div class="row">
-                        <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12 col-12">
-                            Copyright © 2018 Concept. All rights reserved. Dashboard by <a href="https://colorlib.com/wp/">Colorlib</a>.
-                        </div>
-                        <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12 col-12">
-                            <div class="text-md-right footer-links d-none d-sm-block">
-                                <a href="javascript: void(0);">About</a>
-                                <a href="javascript: void(0);">Support</a>
-                                <a href="javascript: void(0);">Contact Us</a>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <!-- ============================================================== -->
-            <!-- end footer -->
-            <!-- ============================================================== -->
-        <!-- </div> -->
-    </div>
-    <!-- ============================================================== -->
-    <!-- end main wrapper -->
-    <!-- ============================================================== -->
-    <!-- Optional JavaScript -->
-    <script src="js/jquery-3.3.1.min.js"></script>
-    <script src="js/bootstrap.bundle.js"></script>
-    <script src="js/jquery.slimscroll.js"></script>
-    <script src="js/main-js.js"></script>
-    <script type="text/javascript" src="js/owl.carousel.min.js"></script>
-    <script>
-        function add_cart(product_id) {
-                $.ajax({
-                    url:'fetch_cart.php',
-                    data:'id='+product_id,
-                    method:'get',
-                    dataType:'json',
-                    success:function(cart){
-                        console.log(cart);
-                        $('.badge').html(cart.length);
-                    }
-                });
-            }       
-        function prodTotal(quantity) { 
-            var price = $(quantity).parent().prev().find('input').val();
-        	var total = quantity.value * price;
-            $(quantity).parent().next().find('input').val(total);
-            $(quantity).parent().next().find('span').html("Rs. "+total);
-            var total_amount = 0;
-            $('input[name="hidden_product_total[]"]').each(function(){
-                total_amount += parseInt($(this).val()); 
-            });
-            $('#total_amount').find('span').html("Rs. "+total_amount);
-            $('#total_amount').find('input').val(total_amount);
-        }  
-        function clear_cart() {
-            var flag = confirm("Do you want to clear cart?");
-            if (flag) {
-                window.location.href = "clear_cart.php";
-            }
+        if (addToCart(current_user_id(), $productId, $quantity)) {
+            set_flash('success', 'Cake added to cart.');
+        } else {
+            set_flash('danger', 'Unable to add that cake right now.');
         }
-    </script>
-</body>
- 
-</html>
+
+        redirect($redirectTo);
+    }
+
+    if ($action === 'update' && !empty($_POST['quantities']) && is_array($_POST['quantities'])) {
+        foreach ($_POST['quantities'] as $productId => $quantity) {
+            updateCartItem(current_user_id(), (int) $productId, (int) $quantity);
+        }
+
+        set_flash('success', 'Cart updated.');
+        redirect('cart.php');
+    }
+
+    if ($action === 'remove') {
+        removeCartItem(current_user_id(), isset($_POST['product_id']) ? (int) $_POST['product_id'] : 0);
+        set_flash('success', 'Item removed from cart.');
+        redirect('cart.php');
+    }
+
+    if ($action === 'clear') {
+        clearCart(current_user_id());
+        set_flash('success', 'Cart cleared.');
+        redirect('cart.php');
+    }
+
+    if ($action === 'checkout_cod') {
+        $user = requireLogin();
+        $address = isset($_POST['address']) ? trim($_POST['address']) : '';
+        $deliveryDate = isset($_POST['delivery_date']) ? $_POST['delivery_date'] : null;
+
+        if ($address === '' || $deliveryDate === '') {
+            set_flash('danger', 'Delivery address and date are required.');
+            redirect('cart.php');
+        }
+
+        $result = placeCashOrder($user['id'], $deliveryDate, $address);
+        if ($result['success']) {
+            set_flash('success', 'Order ' . get_order_display_number($result['order_id']) . ' placed successfully.');
+            redirect('user/account.php');
+        }
+
+        set_flash('danger', $result['message']);
+        redirect('cart.php');
+    }
+
+    if ($action === 'create_razorpay') {
+        $user = requireLogin();
+        $address = isset($_POST['address']) ? trim($_POST['address']) : '';
+        $deliveryDate = isset($_POST['delivery_date']) ? $_POST['delivery_date'] : null;
+
+        if ($address === '' || $deliveryDate === '') {
+            set_flash('danger', 'Delivery address and date are required.');
+            redirect('cart.php');
+        }
+
+        $result = createPendingRazorpayOrder($user['id'], $deliveryDate, $address);
+        if ($result['success']) {
+            $razorpayCheckout = $result;
+        } else {
+            set_flash('danger', $result['message']);
+            redirect('cart.php');
+        }
+    }
+}
+
+$items = getCurrentCartItems();
+$totals = calculateCartTotals($items);
+$user = current_user();
+$defaultAddress = $user && !empty($user['address']) ? $user['address'] : '';
+$minDeliveryDate = date('Y-m-d', strtotime('+1 day'));
+
+if ($razorpayCheckout) {
+    $pageScripts = '
+        <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+        <script>
+            (function () {
+                var options = {
+                    key: ' . json_encode(config_value('payment.razorpay_key_id')) . ',
+                    amount: ' . json_encode((int) round($razorpayCheckout['amount'] * 100)) . ',
+                    currency: ' . json_encode(config_value('payment.currency', 'INR')) . ',
+                    name: ' . json_encode(config_value('app.name')) . ',
+                    description: ' . json_encode('Cake Shop Order ' . get_order_display_number($razorpayCheckout['order_id'])) . ',
+                    order_id: ' . json_encode($razorpayCheckout['gateway_order']['id']) . ',
+                    handler: function (response) {
+                        var payload = new URLSearchParams();
+                        payload.append("_token", ' . json_encode(csrf_token()) . ');
+                        payload.append("order_id", ' . json_encode($razorpayCheckout['order_id']) . ');
+                        payload.append("razorpay_order_id", response.razorpay_order_id);
+                        payload.append("razorpay_payment_id", response.razorpay_payment_id);
+                        payload.append("razorpay_signature", response.razorpay_signature);
+
+                        fetch(' . json_encode(site_url('payment_callback.php')) . ', {
+                            method: "POST",
+                            headers: {
+                                "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8"
+                            },
+                            body: payload.toString()
+                        })
+                        .then(function (response) { return response.json(); })
+                        .then(function (data) {
+                            if (data.success) {
+                                window.location.href = data.redirect;
+                                return;
+                            }
+
+                            alert(data.message || "Payment verification failed.");
+                            window.location.href = ' . json_encode(site_url('cart.php')) . ';
+                        })
+                        .catch(function () {
+                            alert("Unable to verify the payment response.");
+                            window.location.href = ' . json_encode(site_url('cart.php')) . ';
+                        });
+                    },
+                    prefill: {
+                        name: ' . json_encode($user ? $user['username'] : '') . ',
+                        email: ' . json_encode($user ? $user['email'] : '') . ',
+                        contact: ' . json_encode($user ? $user['mobile'] : '') . '
+                    },
+                    theme: {
+                        color: "#d95d39"
+                    }
+                };
+
+                var razorpay = new Razorpay(options);
+                razorpay.on("payment.failed", function () {
+                    window.location.href = ' . json_encode(site_url('cart.php')) . ';
+                });
+                razorpay.open();
+            }());
+        </script>
+    ';
+}
+
+require_once __DIR__ . '/includes/header.php';
+?>
+<div class="container py-4 py-lg-5">
+    <div class="mb-4">
+        <span class="section-label">Smart cart</span>
+        <h1 class="section-title">Review your order before checkout</h1>
+        <p class="subtle-text">Update quantities, remove items, or continue shopping.</p>
+    </div>
+
+    <?php if (empty($items)): ?>
+        <div class="surface-card empty-state">
+            <h2 class="h4">Your cart is empty</h2>
+            <p class="mb-3">Add a few cakes first, then we can take you to checkout.</p>
+            <a class="btn btn-primary" href="<?php echo e(site_url('shop.php')); ?>">Browse cakes</a>
+        </div>
+    <?php else: ?>
+        <div class="row g-4">
+            <div class="col-lg-8">
+                <div class="table-card">
+                    <form method="post" action="<?php echo e(site_url('cart.php?action=update')); ?>">
+                        <?php echo csrf_field(); ?>
+                        <div class="table-responsive">
+                            <table class="table align-middle">
+                                <thead>
+                                    <tr>
+                                        <th>Product</th>
+                                        <th>Price</th>
+                                        <th>Quantity</th>
+                                        <th>Total</th>
+                                        <th></th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <?php foreach ($items as $item): ?>
+                                        <tr>
+                                            <td>
+                                                <div class="d-flex align-items-center gap-3">
+                                                    <img src="<?php echo e(site_url($item['image_path'])); ?>" alt="<?php echo e($item['name']); ?>" style="width:72px;height:72px;object-fit:cover;border-radius:16px;">
+                                                    <div>
+                                                        <strong><?php echo e($item['name']); ?></strong>
+                                                    </div>
+                                                </div>
+                                            </td>
+                                            <td><?php echo e(format_currency($item['price'])); ?></td>
+                                            <td><input class="form-control cart-qty" type="number" min="1" max="20" name="quantities[<?php echo (int) $item['product_id']; ?>]" value="<?php echo (int) $item['quantity']; ?>"></td>
+                                            <td><?php echo e(format_currency($item['price'] * $item['quantity'])); ?></td>
+                                            <td>
+                                                <button class="btn btn-outline-danger btn-sm" type="submit" name="product_id" value="<?php echo (int) $item['product_id']; ?>" formaction="<?php echo e(site_url('cart.php?action=remove')); ?>" formmethod="post">Remove</button>
+                                            </td>
+                                        </tr>
+                                    <?php endforeach; ?>
+                                </tbody>
+                            </table>
+                        </div>
+                        <div class="d-flex flex-wrap gap-2 justify-content-between mt-3">
+                            <button class="btn btn-primary" type="submit">Update cart</button>
+                            <a class="btn btn-outline-dark" href="<?php echo e(site_url('shop.php')); ?>">Continue shopping</a>
+                        </div>
+                    </form>
+                    <form class="mt-2" method="post" action="<?php echo e(site_url('cart.php?action=clear')); ?>">
+                        <?php echo csrf_field(); ?>
+                        <button class="btn btn-outline-dark" type="submit" data-confirm="Clear the full cart?">Clear cart</button>
+                    </form>
+                </div>
+            </div>
+            <div class="col-lg-4">
+                <div class="summary-card mb-4">
+                    <span class="section-label">Summary</span>
+                    <h2 class="h3 mb-3">Order total</h2>
+                    <div class="d-flex justify-content-between mb-2">
+                        <span>Items</span>
+                        <strong><?php echo (int) $totals['count']; ?></strong>
+                    </div>
+                    <div class="d-flex justify-content-between">
+                        <span>Subtotal</span>
+                        <strong><?php echo e(format_currency($totals['subtotal'])); ?></strong>
+                    </div>
+                </div>
+
+                <?php if (!$user): ?>
+                    <div class="form-surface">
+                        <span class="section-label">Login required</span>
+                        <h2 class="h3 mb-2">Checkout after login</h2>
+                        <p class="subtle-text">Your guest cart will merge into your account cart after you sign in.</p>
+                        <div class="d-flex gap-2">
+                            <a class="btn btn-primary" href="<?php echo e(site_url('user/login.php')); ?>">Login</a>
+                            <a class="btn btn-outline-dark" href="<?php echo e(site_url('user/register.php')); ?>">Register</a>
+                        </div>
+                    </div>
+                <?php else: ?>
+                    <div class="form-surface">
+                        <span class="section-label">Checkout</span>
+                        <h2 class="h3 mb-3">Delivery details</h2>
+                        <form method="post" action="<?php echo e(site_url('cart.php?action=checkout_cod')); ?>" class="mb-3">
+                            <?php echo csrf_field(); ?>
+                            <div class="mb-3">
+                                <label class="form-label">Delivery address</label>
+                                <textarea class="form-control" name="address" rows="4" required><?php echo e($defaultAddress); ?></textarea>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Delivery date</label>
+                                <input class="form-control" type="date" name="delivery_date" min="<?php echo e($minDeliveryDate); ?>" required>
+                            </div>
+                            <button class="btn btn-dark w-100" type="submit">Place COD order</button>
+                        </form>
+
+                        <form method="post" action="<?php echo e(site_url('cart.php?action=create_razorpay')); ?>">
+                            <?php echo csrf_field(); ?>
+                            <div class="mb-3">
+                                <label class="form-label">Delivery address</label>
+                                <textarea class="form-control" name="address" rows="4" required><?php echo e($defaultAddress); ?></textarea>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Delivery date</label>
+                                <input class="form-control" type="date" name="delivery_date" min="<?php echo e($minDeliveryDate); ?>" required>
+                            </div>
+                            <button class="btn btn-primary w-100" type="submit" <?php echo payment_is_configured() ? '' : 'disabled'; ?>>Pay with Razorpay</button>
+                            <?php if (!payment_is_configured()): ?>
+                                <p class="small subtle-text mt-2 mb-0">Add `RAZORPAY_KEY_ID` and `RAZORPAY_KEY_SECRET` to enable online payments.</p>
+                            <?php endif; ?>
+                        </form>
+                    </div>
+                <?php endif; ?>
+            </div>
+        </div>
+    <?php endif; ?>
+</div>
+<?php require_once __DIR__ . '/includes/footer.php'; ?>

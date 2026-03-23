@@ -1,77 +1,60 @@
 <?php
-if (isset($_GET['login_error']) && $_GET['login_error'] == 1) {
-    echo "<script>alert('Username or Password does not exist!')</script>";
-    echo "<script>window.location.assign('index.php')</script>";
+require_once __DIR__ . '/../includes/bootstrap.php';
+
+if (is_admin()) {
+    redirect('admin/dashboard.php');
 }
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    if (!verify_csrf_token()) {
+        set_flash('danger', 'Session expired. Please try again.');
+        redirect('admin/index.php');
+    }
+
+    $identifier = isset($_POST['identifier']) ? trim($_POST['identifier']) : '';
+    $password = isset($_POST['password']) ? $_POST['password'] : '';
+    $remember = !empty($_POST['remember']);
+    $user = find_user_by_identifier($identifier, 'admin');
+
+    if ($user && password_verify($password, $user['password_hash'])) {
+        login_user($user, $remember);
+        set_flash('success', 'Admin login successful.');
+        redirect('admin/dashboard.php');
+    }
+
+    set_flash('danger', 'Invalid admin credentials.');
+    redirect('admin/index.php');
+}
+
+$pageTitle = 'Admin Login';
+$adminLayout = false;
+require_once __DIR__ . '/../includes/header.php';
 ?>
-<!doctype html>
-<html lang="en">
- 
-<head>
-    <!-- Required meta tags -->
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-    <title>OCS - Login</title>
-    <!-- Bootstrap CSS -->
-    <link rel="stylesheet" href="../css/bootstrap.min.css">
-    <link href="../fonts/circular-std/style.css" rel="stylesheet">
-    <link rel="stylesheet" href="../css/style.css">
-    <link rel="stylesheet" href="../fonts/fontawesome/css/fontawesome-all.css">
-    <style>
-    html,
-    body {
-        height: 100%;
-    }
-
-    body {
-        display: -ms-flexbox;
-        display: flex;
-        -ms-flex-align: center;
-        align-items: center;
-        padding-top: 40px;
-        padding-bottom: 40px;
-    }
-    </style>
-</head>
-
-<body>
-    <!-- ============================================================== -->
-    <!-- login page  -->
-    <!-- ============================================================== -->
-    <div class="splash-container">
-        <div class="card ">
-            <div class="card-header text-center"><a href="#"><h2 class="text-primary">Online Cake Shop</h2></a><span class="splash-description">Please enter your user information.</span></div>
-            <div class="card-body">
-                <form id="form" data-parsley-validate="" method="post" action="login_check.php">
-                    <div class="form-group">
-                        <input class="form-control form-control-lg" type="text" name="admin_username" data-parsley-trigger="change" required="" placeholder="Username" autocomplete="off">
+<div class="container py-4 py-lg-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-5">
+            <div class="form-surface">
+                <span class="section-label">Admin access</span>
+                <h1 class="section-title">Login to the dashboard</h1>
+                <p class="subtle-text mb-4">Default seeded admin: <code>admin@cakeshop.local</code> / <code>admin123</code></p>
+                <form method="post">
+                    <?php echo csrf_field(); ?>
+                    <div class="mb-3">
+                        <label class="form-label">Email or username</label>
+                        <input class="form-control" type="text" name="identifier" required>
                     </div>
-                    <div class="form-group">
-                        <input class="form-control form-control-lg" id="pass1" type="password" required="" placeholder="Password" name="admin_password">
+                    <div class="mb-3">
+                        <label class="form-label">Password</label>
+                        <input class="form-control" type="password" name="password" required>
                     </div>
-                    <button type="submit" class="btn btn-primary btn-lg btn-block">Sign in</button>
+                    <div class="form-check mb-4">
+                        <input class="form-check-input" type="checkbox" name="remember" id="adminRemember" value="1">
+                        <label class="form-check-label" for="adminRemember">Remember me</label>
+                    </div>
+                    <button class="btn btn-primary w-100" type="submit">Login</button>
                 </form>
-            </div>
-            <div class="card-footer bg-white p-0  ">
-                <div class="card-footer-item card-footer-item-bordered">
-                    <a href="admin_signup.php" class="footer-link">Create An Account</a></div>
-                <div class="card-footer-item card-footer-item-bordered">
-                    <a href="#" class="footer-link">Forgot Password</a>
-                </div>
             </div>
         </div>
     </div>
-  
-    <!-- ============================================================== -->
-    <!-- end login page  -->
-    <!-- ============================================================== -->
-    <!-- Optional JavaScript -->
-    <script src="../js/jquery-3.3.1.min.js"></script>
-    <script src="../js/bootstrap.bundle.js"></script>
-    <script src="../js/parsley.js"></script>
-    <script>
-    $('#form').parsley();
-    </script>
-</body>
- 
-</html>
+</div>
+<?php require_once __DIR__ . '/../includes/footer.php'; ?>

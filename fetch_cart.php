@@ -1,12 +1,14 @@
 <?php
-session_start();
-$id = $_GET['id'];
-if(empty($_SESSION['cart'])){
-	$_SESSION['cart'][] = $id;
-} else {
-	if (!in_array($id, $_SESSION['cart'])) {
-		$_SESSION['cart'][] = $id;
-	}
+require_once __DIR__ . '/includes/bootstrap.php';
+
+header('Content-Type: application/json');
+
+$productId = isset($_GET['id']) ? (int) $_GET['id'] : 0;
+if ($productId > 0) {
+    addToCart(current_user_id(), $productId, 1);
 }
-echo json_encode($_SESSION['cart']);
-?>
+
+echo json_encode(array(
+    'count' => getCurrentCartCount(),
+    'items' => getCurrentCartItems(),
+));

@@ -1,17 +1,15 @@
 <?php
-require_once('config.php');
-$users_username = $_POST['users_username'];
-$users_password = $_POST['users_password'];
-$select = "SELECT * FROM cake_shop_users_registrations where users_username = '$users_username' AND users_password = '$users_password'";
-$query = mysqli_query($conn, $select);
-$res = mysqli_fetch_assoc($query);
-if (mysqli_num_rows($query) > 0) {
-	session_start();
-	$_SESSION['user_users_id'] = $res['users_id'];
-	$_SESSION['user_users_username'] = $res['users_username'];
-	header("Location: index.php?login_success=1");
-} 
-else {
-	header("Location: login_users.php?login_error=1");
+require_once __DIR__ . '/includes/bootstrap.php';
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $user = find_user_by_identifier(isset($_POST['users_username']) ? trim($_POST['users_username']) : '');
+    $password = isset($_POST['users_password']) ? $_POST['users_password'] : '';
+
+    if ($user && password_verify($password, $user['password_hash'])) {
+        login_user($user, false);
+        redirect($user['role'] === 'admin' ? 'admin/dashboard.php' : 'user/account.php');
+    }
 }
-?>
+
+set_flash('danger', 'Login failed. Please use the updated login form.');
+redirect('user/login.php');
